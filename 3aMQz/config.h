@@ -6,7 +6,7 @@
 #define NO_AUTO_SHIFT_TAB
 #define NO_AUTO_SHIFT_ALPHA
 #define CAPS_LOCK_STATUS
-#define SERIAL_NUMBER "3aMQz/orqYQr"
+#define SERIAL_NUMBER "3aMQz/ZPQXge"
 #define LAYER_STATE_8BIT
 #define COMBO_COUNT 2
 
