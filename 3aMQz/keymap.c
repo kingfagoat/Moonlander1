@@ -946,6 +946,94 @@ uint8_t dance_step(tap_dance_state_t *state) {
     return MORE_TAPS;
 }
 
+#include QMK_KEYBOARD_H
+
+enum tap_dance_codes {
+    DANCE_0,
+    DANCE_1,
+    DANCE_2,
+};
+
+typedef struct {
+    bool is_press_action;
+    uint8_t step;
+} tap;
+
+enum {
+    SINGLE_TAP = 1,
+    SINGLE_HOLD,
+    DOUBLE_TAP,
+    DOUBLE_HOLD,
+    DOUBLE_SINGLE_TAP,
+    MORE_TAPS
+};
+
+static tap dance_state[3];
+
+uint8_t dance_step(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) return SINGLE_TAP;
+        else return SINGLE_HOLD;
+    } else if (state->count == 2) {
+        if (state->interrupted) return DOUBLE_SINGLE_TAP;
+        else if (state->pressed) return DOUBLE_HOLD;
+        else return DOUBLE_TAP;
+    }
+    return MORE_TAPS;
+}
+
+void dance_1_finished(tap_dance_state_t *state, void *user_data) {
+    dance_state[1].step = dance_step(state);
+    switch (dance_state[1].step) {
+        case SINGLE_TAP:
+            register_code16(KC_SPACE);
+            break;
+        case DOUBLE_TAP:
+            tap_code(KC_DOT);
+            tap_code(KC_SPACE);
+            break;
+        case DOUBLE_SINGLE_TAP:
+            tap_code(KC_SPACE);
+            register_code16(KC_SPACE);
+            break;
+    }
+}
+
+void dance_1_reset(tap_dance_state_t *state, void *user_data) {
+    wait_ms(10);
+    switch (dance_state[1].step) {
+        case SINGLE_TAP:
+            unregister_code16(KC_SPACE);
+            break;
+        case DOUBLE_SINGLE_TAP:
+            unregister_code16(KC_SPACE);
+            break;
+    }
+    dance_state[1].step = 0;
+}
+
+bool rgb_matrix_indicators_user(void) {
+    if (rawhid_state.rgb_control) return false;
+    if (keyboard_config.disable_layer_led) return false;
+    uint8_t layer = biton32(layer_state);
+    if (layer == 1 && host_keyboard_led_state().caps_lock) {
+        set_layer_color(4);  // Override to layer 4 colors
+    } else {
+        switch (layer) {
+            case 0: set_layer_color(0); break;
+            case 1: set_layer_color(1); break;
+            case 2: set_layer_color(2); break;
+            case 3: set_layer_color(3); break;
+            case 4: set_layer_color(4); break;
+            default:
+                if (rgb_matrix_get_flags() == LED_FLAG_NONE)
+                    rgb_matrix_set_color_all(0, 0, 0);
+                break;
+        }
+    }
+    return true;
+}
+
 
 void on_dance_0(tap_dance_state_t *state, void *user_data);
 void dance_0_finished(tap_dance_state_t *state, void *user_data);
